@@ -1,103 +1,148 @@
 package io.pkp.randprob;
 
-import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.*;
 
 /**
  * Sample implementation of a HashMap
  * Created by praveen on 5/8/16.
  */
 public class MyHashMap<K,V> {
-    private int myCapacity;
-    private ArrayList<LinkedList<MyEntry>> myBuckets;
+    private static final int DEFAULT_INITIAL_CAPACITY = 16;
+
+    private int mCapacity;
+    private ArrayList<Entry<K,V>> mTable;
+
+    public MyHashMap(){
+        this(DEFAULT_INITIAL_CAPACITY);
+    }
 
     public MyHashMap(int capacity){
-        myCapacity = capacity;
-        myBuckets = new ArrayList<>();
+        mCapacity = capacity;
+        mTable = new ArrayList<Entry<K,V>>(mCapacity);
+        for(int i=0; i<mCapacity; i++)
+            mTable.add(null);
     }
 
-    /**
-     * Hashes the key's hash value into a number between [0, capacity)
-     * @return hash value
-     */
-    private int hashedKey(K key){
-        return key.hashCode() % myCapacity;
+    public int indexOf(K key){
+        return key.hashCode() & (mCapacity - 1);
     }
 
-    /**
-     * Put a new key-value pair into the map
-     * @param key
-     * @param val
-     */
-    public void put(K key, V val){
-        int index = hashedKey(key);
-        myBuckets.get(index).add(new MyEntry(key, val));
+    public V put(K key, V value) {
+        int index = indexOf(key);
+        Entry<K,V> e = mTable.get(index);
+
+        // Empty bucket
+        if(e == null) {
+            mTable.set(index, new Entry<>(key, value));
+            return null;
+        }
+
+        // Bucket already has some values
+        else {
+            while (true){
+                if(e.getKey().equals(key)){
+                    V oldVal = e.getValue();
+                    e.setValue(value);
+                    return oldVal;
+                }
+
+                if(e.getNext() == null){
+                    e.setNext(new Entry<>(key, value));
+                    return null;
+                }
+
+                e = e.getNext();
+            }
+        }
     }
 
-    /**
-     * Get value for a given key
-     * @param key
-     * @return
-     */
-    public V get(K key){
-        int index = hashedKey(key);
-        for (MyEntry e : myBuckets.get(index))
+    public V get(K key) {
+        int index = indexOf(key);
+        Entry<K,V> e = mTable.get(index);
+
+        while (true){
             if(e.getKey().equals(key))
-                return e.getVal();
-        return null;
+                return e.getValue();
+
+            if(e.getNext() == null)
+                return null;
+
+            e = e.getNext();
+        }
     }
 
-    /**
-     * Removes a key-value pair from map if key exists
-     * @param key
-     * @return Value of the removed key
-     */
-    public V remove(K key){
-        int index = hashedKey(key);
-        return null;
+    public V remove(K key) {
+        int index = indexOf(key);
+        Entry<K,V> e = mTable.get(index);
+
+        // Removing value at head
+        if(e.getKey().equals(key)){
+            mTable.set(index, e.getNext());
+            return e.getValue();
+        }
+
+        Entry<K,V> prev = e;
+        Entry<K,V> now = e.getNext();
+        while (true){
+            if(now == null)
+                return null;
+
+            if(now.getKey().equals(key)) {
+                prev.setNext(now.getNext());
+                return now.getValue();
+            }
+
+            prev = now;
+            now = now.getNext();
+        }
+    }
+
+    public void print(){
+        for (Entry<K,V> e : mTable){
+            System.out.println("----------------");
+            while (e != null){
+                System.out.println("Key : " + e.getKey() + " Value : " + e.getValue());
+                e = e.getNext();
+            }
+        }
     }
 
     /**
      * An entry that encapsulates key-value pairs into one object.
      */
-    private class MyEntry {
-        K key;
-        V val;
+    private class Entry<K,V> implements Map.Entry<K,V> {
+        final K key;
+        V value;
+        Entry<K,V> next;
 
-        public MyEntry(K key, V val){
+        public Entry(K key, V val){
             this.key = key;
-            this.val = val;
+            this.value = val;
         }
 
-        public V getVal() {
-            return val;
-        }
-
-        public void setVal(V val) {
-            this.val = val;
-        }
-
+        @Override
         public K getKey() {
             return key;
         }
 
-        public void setKey(K key) {
-            this.key = key;
+        @Override
+        public V getValue() {
+            return value;
         }
 
         @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            MyEntry myEntry = (MyEntry) o;
-
-            return key.equals(myEntry.key);
+        public V setValue(V value) {
+            V oval = this.value;
+            this.value = value;
+            return oval;
         }
 
-        @Override
-        public int hashCode() {
-            return key.hashCode();
+        public Entry<K, V> getNext() {
+            return next;
+        }
+
+        public void setNext(Entry<K, V> next) {
+            this.next = next;
         }
     }
 }
