@@ -22,10 +22,10 @@ def readStringArr():
     return [i for i in readLine().split(' ')]
 
 def write(data):
-    OUT.write(data)
+    OUT.write(str(data))
 
 def writeLine(data):
-    write(data + "\n")
+    write(str(data) + "\n")
 
 def done():
     IN.close()
